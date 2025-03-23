@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Python: Odoo",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "/usr/bin/odoo",
+            "python": "/usr/bin/python3",
+            "console": "integratedTerminal",
+            "preLaunchTask": "generate-odoo-args",
+            "args": [
+                "-i londres_hr,londres_partner,londres_project,londres_suite",
+                "-u londres_hr,londres_partner,londres_project,londres_suite"
+            ],
+            "cwd": "${workspaceFolder}",
+            "env": {},
+            "envFile": "${workspaceFolder}/.env",
+            "redirectOutput": true
+        }
+    ]
+}

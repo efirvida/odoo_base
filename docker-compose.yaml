@@ -1,0 +1,80 @@
+services:
+  db:
+    image: postgres:15
+    env_file: .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_odoo:/var/lib/postgresql/data
+
+  odoo:
+    build:
+      context: .
+      args:
+        ODOO_VERSION: ${ODOO_VERSION:-16.0}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    env_file: .env
+    ports:
+      - "8069:8069"
+      - "8071:8071"
+      - "8072:8072"
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - .:/workspace
+      - ~/.ssh:/home/odoo/.ssh:ro
+    user: "${UID:-1000}:${GID:-1000}"
+    command: >
+      bash -c "wait-for-it db:5432 --timeout=120 --
+      && MODULES=$$(ls /workspace/extra-addons/ | paste -sd, -)
+      && odoo -i '/$${MODULES//,/,\/}' --module '/$${MODULES//,/,\/}' --database odoo-${ODOO_VERSION:-16.0}"
+
+  odoo_dev:
+    build:
+      context: .
+      args:
+        ODOO_VERSION: ${ODOO_VERSION:-16.0}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    tty: true
+    env_file: .env
+    ports:
+      - "8069:8069"
+      - "8071:8071"
+      - "8072:8072"
+    volumes:
+      - odoo_data:/var/lib/odoo
+      - .:/workspace
+      - ~/.ssh:/home/odoo/.ssh:ro
+    user: "${UID:-1000}:${GID:-1000}"
+
+  odoo-tests:
+    build:
+      context: .
+      args:
+        ODOO_VERSION: ${ODOO_VERSION:-16.0}
+    environment:
+      ODOO_VERSION: ${ODOO_VERSION}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - .:/workspace
+      - odoo_data:/var/lib/odoo
+    command: >
+      bash -c "wait-for-it db:5432 --timeout=120 --
+      && MODULES=$$(ls /workspace/extra-addons/ | paste -sd, -)
+      && COVERAGE_FILE=/tmp/.coverage coverage run $$(which odoo) --test-enable --stop-after-init -i '/$${MODULES//,/,\/}' --module '/$${MODULES//,/,\/}' --database test-db-${ODOO_VERSION:-16.0}
+      && COVERAGE_FILE=/tmp/.coverage coverage report"
+
+volumes:
+  postgres_odoo:
+  odoo_data:

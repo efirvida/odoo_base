@@ -1,0 +1,28 @@
+{
+    "name": "Odoo-dev",
+    "dockerComposeFile": [
+        "../docker-compose.yaml"
+    ],
+    "service": "odoo_dev",
+    "runServices": [
+        "odoo_dev"
+    ],
+    "workspaceFolder": "/workspace",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "formulahendry.auto-close-tag",
+                "formulahendry.auto-rename-tag",
+                "fabianlauer.vs-code-xml-format",
+                "charliermarsh.ruff",
+                "ReprEng.csv",
+                "ryanluker.vscode-coverage-gutters",
+                "Odoo.odoo",
+                "trinhanhngoc.vscode-odoo"
+            ]
+        }
+    },
+    "containerUser": "odoo"
+}
