@@ -33,7 +33,7 @@ services:
     command: >
       bash -c "wait-for-it db:5432 --timeout=120 --
       && MODULES=$$(ls /workspace/extra-addons/ | paste -sd, -)
-      && odoo -i '/$${MODULES//,/,\/}' --module '/$${MODULES//,/,\/}' --database odoo-${ODOO_VERSION:-16.0}"
+      && odoo-bin -i '/$${MODULES//,/,\/}' --module '/$${MODULES//,/,\/}' --database odoo-${ODOO_VERSION:-16.0}"
 
   odoo_dev:
     build:
@@ -72,7 +72,7 @@ services:
     command: >
       bash -c "wait-for-it db:5432 --timeout=120 --
       && MODULES=$$(ls /workspace/extra-addons/ | paste -sd, -)
-      && COVERAGE_FILE=/tmp/.coverage coverage run $$(which odoo) --test-enable --stop-after-init -i '/$${MODULES//,/,\/}' --module '/$${MODULES//,/,\/}' --database test-db-${ODOO_VERSION:-16.0}
+      && COVERAGE_FILE=/tmp/.coverage coverage run $$(which odoo-bin) --test-enable --stop-after-init -i '/$${MODULES//,/,\/}' --module '/$${MODULES//,/,\/}' --database test-db-${ODOO_VERSION:-16.0}
       && COVERAGE_FILE=/tmp/.coverage coverage report"
 
 volumes:

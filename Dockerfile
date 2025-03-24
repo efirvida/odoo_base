@@ -30,13 +30,14 @@ RUN apt-get update && apt-get upgrade -y \
             curl \
             git \
             gnupg \
-            libldap2-dev \
-            libsasl2-dev \
             libev-dev \
+            libldap2-dev \
+            libpq-dev \
+            libsasl2-dev \
             libssl-dev \
+            linux-headers-virtual \
             nodejs \
             npm \
-            linux-headers-virtual \
             python-dev-is-python3 \
             python-is-python3 \
             python3-dev \
@@ -64,45 +65,82 @@ RUN echo 'deb http://apt.postgresql.org/pub/repos/apt/ jammy-pgdg main' > /etc/a
 # Setup Python
 RUN MAJOR_VERSION=$(echo "${ODOO_VERSION}" | cut -d. -f1) && \
     if [ "${MAJOR_VERSION}" -ge 17 ]; then \
-        echo "Using Python 3.11 for Odoo ${ODOO_VERSION}"; \
+        echo "Installing Python 3.12 for Odoo ${ODOO_VERSION}"; \
         apt-get update && \
         apt-get install -y software-properties-common && \
         add-apt-repository -y ppa:deadsnakes/ppa && \
         apt-get update && \
-        apt-get install -y python3.11 python3.11-dev python3.11-venv && \
-        python3.11 -m ensurepip --upgrade && \
-        update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 && \
-        update-alternatives --install /usr/bin/pip3 pip3 /usr/local/bin/pip3.11 1 && \
-        update-alternatives --set python3 /usr/bin/python3.11 && \
-        update-alternatives --set pip3 /usr/local/bin/pip3.11 && \
-        curl -sSL "https://raw.githubusercontent.com/odoo/odoo/refs/heads/${ODOO_VERSION}/requirements.txt" -o /tmp/odoo_${ODOO_VERSION}_requirements.txt && \
-        pip3 install --no-cache-dir --upgrade --ignore-installed -r /tmp/odoo_${ODOO_VERSION}_requirements.txt && \
-        rm /tmp/odoo_${ODOO_VERSION}_requirements.txt && \
-        rm -rf /var/lib/apt/lists/*; \
-    else \
-        echo "Using system default Python for Odoo ${ODOO_VERSION}"; \
-    fi
-    
-# Install Odoo from local .deb
-COPY odoo_*.deb /tmp/
-
-RUN if [ -f "/tmp/odoo_${ODOO_VERSION}.deb" ]; then \
-        echo "Using local odoo_${ODOO_VERSION}.deb package"; \
-    else \
-        echo "Getting Odoo ${ODOO_VERSION} from odoo servers"; \
-        curl -sSL http://nightly.odoo.com/${ODOO_VERSION}/nightly/deb/odoo_${ODOO_VERSION}.latest_all.deb -o /tmp/odoo_${ODOO_VERSION}.deb; \
+        apt-get install -y python3.12 python3.12-dev python3.12-venv && \
+        python3.12 -m ensurepip --upgrade && \
+        update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 2 && \
+        update-alternatives --install /usr/bin/pip3 pip3 /usr/local/bin/pip3.12 2; \
+    elif [ "${MAJOR_VERSION}" -le 14 ]; then \
+        echo "Installing Python 3.8 for Odoo ${ODOO_VERSION}"; \
+        apt-get update && \
+        apt-get install -y software-properties-common && \
+        add-apt-repository -y ppa:deadsnakes/ppa && \
+        apt-get update && \
+        apt-get install -y python3.8 python3.8-dev python3.8-venv && \
+        python3.8 -m ensurepip --upgrade && \
+        update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.8 1 && \
+        update-alternatives --install /usr/bin/pip3 pip3 /usr/local/bin/pip3.8 1; \
     fi && \
-    apt-get update && \
-    dpkg -i /tmp/odoo_${ODOO_VERSION}.deb || apt-get install -f -y && \
-    dpkg -i /tmp/odoo_${ODOO_VERSION}.deb && \
-    rm -rf /tmp/odoo_${ODOO_VERSION}.deb /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/*
+
+RUN MAJOR_VERSION=$(echo "${ODOO_VERSION}" | cut -d. -f1) && \
+    if [ -f "/tmp/odoo_${ODOO_VERSION}.deb" ]; then \
+        echo "Installing from local .deb package"; \
+        apt-get update && apt-get install -y /tmp/odoo_${ODOO_VERSION}.deb; \
+    else \
+        echo "Cloning Odoo ${ODOO_VERSION} repository"; \
+        git clone --depth 1 --branch ${ODOO_VERSION} https://github.com/odoo/odoo.git /tmp/odoo; \
+        cd /tmp/odoo && \
+        if [ "${MAJOR_VERSION}" -le 14 ]; then \
+            echo "Installing dependencies for Odoo ${ODOO_VERSION}"; \
+            if [ -f "debian/control" ]; then \
+                pip3 --no-cache-dir install setuptools==57.5.0; \
+                echo "Using official dependency detection method"; \
+                sed -n -e '/^Depends:/,/^Pre/ s/ python3-\(.*\),/python3-\1/p' debian/control | xargs apt-get install -y || \
+                { echo "Failed to install some dependencies via apt, trying pip fallback"; \
+                sed -n -e '/^Depends:/,/^Pre/ s/ python3-\(.*\),/\1/p' debian/control | \
+                while read dep; do \
+                    case "$dep" in \
+                    "pil") pip_pkg="Pillow" ;; \
+                    "ldap") pip_pkg="python-ldap" ;; \
+                    "dateutil") pip_pkg="python-dateutil" ;; \
+                    "renderpm") pip_pkg="rl-renderPM rlPyCairo" ;; \
+                    *) pip_pkg="$dep" ;; \
+                    esac && \
+                    pip3 install --no-cache-dir "$pip_pkg" || { echo "Failed to install $pip_pkg"; exit 1; }; \
+                done; \
+                }; \
+            else \
+                echo "ERROR: debian/control not found!"; \
+                exit 1; \
+            fi; \
+        else \
+            echo "Running debinstall.sh"; \
+            if [ -f "./setup/debinstall.sh" ]; then \
+                ./setup/debinstall.sh; \
+            else \
+                echo "ERROR: debinstall.sh not found!"; \
+                exit 1; \
+            fi; \
+        fi; \
+        pip3 pip install --no-cache-dir --upgrade pip setuptools lxml_html_clean psycopg2-binary; \
+        pip3 install -r requirements.txt ; \
+        pip3 install . ; \
+        mv odoo-bin /usr/bin/; \
+        chmod +x /usr/bin/odoo-bin; \
+        rm -rf /tmp/odoo /var/lib/apt/lists/*; \
+    fi;
 
 # Install Python dependencies
 COPY ./config/requirements.txt /tmp/
 
-RUN pip3 install --upgrade --no-cache-dir pip setuptools==65.5.0 \
-    && pip3 install --no-cache-dir xlwt num2words ipdb pytest pytest-cov pytest-odoo coverage debugpy ipython ruff \
-    && pip3 install --no-cache-dir -r /tmp/requirements.txt \
+RUN pip3 install --upgrade --no-cache-dir pip setuptools \
+    && pip3 install --upgrade --no-cache-dir --ignore-installed reportlab fonttools xlwt num2words ipdb pytest pytest-cov pytest-odoo coverage debugpy ipython ruff \
+    && pip3 install --upgrade --no-cache-dir --ignore-installed -r /tmp/requirements.txt \
     && rm /tmp/requirements.txt
 
 # Configure Odoo
