@@ -135,6 +135,11 @@ RUN MAJOR_VERSION=$(echo "${ODOO_VERSION}" | cut -d. -f1) && \
         rm -rf /var/lib/apt/lists/*; \
     fi;
 
+# FIX LXML
+RUN apt-get remove -y python3-lxml && \
+    pip3 uninstall -y lxml lxml-html-clean && \
+    pip3 install --no-cache-dir lxml lxml-html-clean
+
 # Install Python dependencies
 COPY ./config/requirements.txt /tmp/
 
