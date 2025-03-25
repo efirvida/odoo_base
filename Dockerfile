@@ -139,7 +139,7 @@ RUN MAJOR_VERSION=$(echo "${ODOO_VERSION}" | cut -d. -f1) && \
 COPY ./config/requirements.txt /tmp/
 
 RUN pip3 install --upgrade --no-cache-dir pip setuptools \
-    && pip3 install --upgrade --no-cache-dir --ignore-installed reportlab fonttools xlwt num2words ipdb pytest pytest-cov pytest-odoo coverage debugpy ipython ruff \
+    && pip3 install --upgrade --no-cache-dir --ignore-installed reportlab fonttools ipdb pytest pytest-cov pytest-odoo coverage debugpy ipython ruff \
     && pip3 install --upgrade --no-cache-dir --ignore-installed -r /tmp/requirements.txt \
     && rm /tmp/requirements.txt
 
