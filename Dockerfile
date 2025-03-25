@@ -126,9 +126,9 @@ RUN MAJOR_VERSION=$(echo "${ODOO_VERSION}" | cut -d. -f1) && \
                 echo "ERROR: debinstall.sh not found!"; \
                 exit 1; \
             fi; \
+            pip3 install --no-cache-dir --upgrade pip setuptools; \
         fi; \
-        pip3 install --no-cache-dir --upgrade pip setuptools lxml_html_clean psycopg2-binary; \
-        pip3 install -r requirements.txt ; \
+        pip3 install --no-cache-dir --upgrade lxml_html_clean psycopg2-binary; \
         pip3 install . ; \
         mv odoo-bin /usr/bin/; \
         chmod +x /usr/bin/odoo-bin; \
