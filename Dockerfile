@@ -127,7 +127,7 @@ RUN MAJOR_VERSION=$(echo "${ODOO_VERSION}" | cut -d. -f1) && \
                 exit 1; \
             fi; \
         fi; \
-        pip3 pip install --no-cache-dir --upgrade pip setuptools lxml_html_clean psycopg2-binary; \
+        pip3 pip install --no-cache-dir --upgrade pip setuptools "lxml[html_clean]" lxml_html_clean psycopg2-binary; \
         pip3 install -r requirements.txt ; \
         pip3 install . ; \
         mv odoo-bin /usr/bin/; \
