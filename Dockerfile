@@ -88,13 +88,13 @@ RUN MAJOR_VERSION=$(echo "${ODOO_VERSION}" | cut -d. -f1) && \
     rm -rf /var/lib/apt/lists/*
 
 RUN MAJOR_VERSION=$(echo "${ODOO_VERSION}" | cut -d. -f1) && \
-    if [ -f "/tmp/odoo_${ODOO_VERSION}.deb" ]; then \
+    if [ -f "/usr/lib/odoo_${ODOO_VERSION}.deb" ]; then \
         echo "Installing from local .deb package"; \
-        apt-get update && apt-get install -y /tmp/odoo_${ODOO_VERSION}.deb; \
+        apt-get update && apt-get install -y /usr/lib/odoo_${ODOO_VERSION}.deb; \
     else \
         echo "Cloning Odoo ${ODOO_VERSION} repository"; \
-        git clone --depth 1 --branch ${ODOO_VERSION} https://github.com/odoo/odoo.git /tmp/odoo; \
-        cd /tmp/odoo && \
+        git clone --depth 1 --branch ${ODOO_VERSION} https://github.com/odoo/odoo.git /usr/lib/odoo; \
+        cd /usr/lib/odoo && \
         if [ "${MAJOR_VERSION}" -le 14 ]; then \
             echo "Installing dependencies for Odoo ${ODOO_VERSION}"; \
             if [ -f "debian/control" ]; then \
@@ -132,7 +132,7 @@ RUN MAJOR_VERSION=$(echo "${ODOO_VERSION}" | cut -d. -f1) && \
         pip3 install . ; \
         mv odoo-bin /usr/bin/; \
         chmod +x /usr/bin/odoo-bin; \
-        rm -rf /tmp/odoo /var/lib/apt/lists/*; \
+        rm -rf /var/lib/apt/lists/*; \
     fi;
 
 # Install Python dependencies
