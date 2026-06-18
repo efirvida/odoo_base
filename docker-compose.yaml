@@ -21,7 +21,6 @@ x-odoo-common: &odoo-common
   volumes:
     - odoo_data:/var/lib/odoo
     - .:/workspace
-    - ~/.ssh:/home/odoo/.ssh:ro
 
 services:
   db:
