@@ -1,3 +1,11 @@
+x-odoo-env: &odoo-env
+  DB_HOST: ${DB_HOST:-db}
+  DB_PORT: ${DB_PORT:-5432}
+  POSTGRES_USER: ${POSTGRES_USER:-odoo}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo}
+  ODOO_VERSION: ${ODOO_VERSION:-19.0}
+  DEFAULT_MODULES: ${DEFAULT_MODULES:-}
+
 x-odoo-common: &odoo-common
   build:
     context: .
@@ -7,11 +15,9 @@ x-odoo-common: &odoo-common
     db:
       condition: service_healthy
   restart: unless-stopped
-  env_file: .env
-  ports:
-    - "8069:8069"
-    - "8071:8071"
-    - "8072:8072"
+  env_file:
+    - path: .env
+      required: false
   volumes:
     - odoo_data:/var/lib/odoo
     - .:/workspace
@@ -20,7 +26,13 @@ x-odoo-common: &odoo-common
 services:
   db:
     image: postgres:18
-    env_file: .env
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -32,7 +44,12 @@ services:
 
   odoo:
     <<: *odoo-common
+    ports:
+      - "8069:8069"
+      - "8071:8071"
+      - "8072:8072"
     environment:
+      <<: *odoo-env
       ODOO_DB: odoo-${ODOO_VERSION:-19.0}
     command: odoo-bin --database odoo-${ODOO_VERSION:-19.0}
 
@@ -40,8 +57,8 @@ services:
     <<: *odoo-common
     profiles: [dev]
     restart: "no"
-    ports: []
     environment:
+      <<: *odoo-env
       ODOO_DB: odoo-${ODOO_VERSION:-19.0}
       TERM: xterm
     tty: true
@@ -52,8 +69,8 @@ services:
     <<: *odoo-common
     profiles: [test]
     restart: "no"
-    ports: []
     environment:
+      <<: *odoo-env
       ODOO_DB: test-db-${ODOO_VERSION:-19.0}
     command: >-
       bash -c "
