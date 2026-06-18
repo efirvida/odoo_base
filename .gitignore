@@ -1,0 +1,19 @@
+# Environment / secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+
+# Coverage / test artifacts
+.coverage
+htmlcov/
+.pytest_cache/
+
+# OS
+.DS_Store
+
+# Local tooling caches
+.atl/

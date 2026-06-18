@@ -1,0 +1,68 @@
+x-odoo-common: &odoo-common
+  build:
+    context: .
+    args:
+      ODOO_VERSION: ${ODOO_VERSION:-19.0}
+  depends_on:
+    db:
+      condition: service_healthy
+  restart: unless-stopped
+  env_file: .env
+  ports:
+    - "8069:8069"
+    - "8071:8071"
+    - "8072:8072"
+  volumes:
+    - odoo_data:/var/lib/odoo
+    - .:/workspace
+    - ~/.ssh:/home/odoo/.ssh:ro
+
+services:
+  db:
+    image: postgres:18
+    env_file: .env
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_odoo:/var/lib/postgresql/data
+
+  odoo:
+    <<: *odoo-common
+    environment:
+      ODOO_DB: odoo-${ODOO_VERSION:-19.0}
+    command: odoo-bin --database odoo-${ODOO_VERSION:-19.0}
+
+  shell:
+    <<: *odoo-common
+    profiles: [dev]
+    restart: "no"
+    ports: []
+    environment:
+      ODOO_DB: odoo-${ODOO_VERSION:-19.0}
+      TERM: xterm
+    tty: true
+    stdin_open: true
+    command: odoo-bin shell --database odoo-${ODOO_VERSION:-19.0}
+
+  run-tests:
+    <<: *odoo-common
+    profiles: [test]
+    restart: "no"
+    ports: []
+    environment:
+      ODOO_DB: test-db-${ODOO_VERSION:-19.0}
+    command: >-
+      bash -c "
+        COVERAGE_FILE=/tmp/.coverage
+        coverage run $$(which odoo-bin)
+          --test-enable --stop-after-init
+          --database test-db-$${ODOO_VERSION:-19.0}
+        && COVERAGE_FILE=/tmp/.coverage coverage report"
+
+volumes:
+  postgres_odoo:
+  odoo_data:
