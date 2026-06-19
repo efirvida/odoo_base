@@ -40,9 +40,10 @@ services:
   odoo:
     <<: *odoo-common
     ports:
-      - "8069:8069"
       - "8071:8071"
       - "8072:8072"
+    expose:
+      - "8069"
     environment:
       <<: *odoo-env
       ODOO_DB: odoo-${ODOO_VERSION:-19.0}
