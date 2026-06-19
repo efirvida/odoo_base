@@ -59,12 +59,14 @@ RUN useradd -m -d ${HOME} --shell /bin/bash odoo && \
     true
 
 # ── 4. Install Odoo from source ──────────────────────────────────
-RUN git clone --depth 1 --branch ${ODOO_VERSION} \
-        https://github.com/odoo/odoo.git /usr/lib/odoo && \
-    pip3 install --break-system-packages --no-cache-dir \
-        -r /usr/lib/odoo/requirements.txt && \
-    pip3 install --break-system-packages --no-cache-dir -e /usr/lib/odoo && \
-    # Work around PyPDF2 escape sequence warning (Python 3.12)
+RUN ODOO_VER="${ODOO_VERSION:-19.0}" && \
+    git clone --depth 1 --branch "${ODOO_VER}" \
+        https://github.com/odoo/odoo.git /usr/lib/odoo
+
+RUN pip3 install --break-system-packages --no-cache-dir \
+        -r /usr/lib/odoo/requirements.txt
+
+RUN pip3 install --break-system-packages --no-cache-dir -e /usr/lib/odoo && \
     pip3 install --break-system-packages --no-cache-dir --upgrade \
         lxml lxml_html_clean psycopg2-binary
 
