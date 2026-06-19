@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # ── 1. Export DB env vars in Odoo-native format (PGHOST, etc.) ─────
 export PGHOST="${DB_HOST:-${PGHOST:-db}}"
@@ -10,14 +9,17 @@ export PGPASSWORD="${DB_PASSWORD:-${PGPASSWORD:-odoo}}"
 # ── 2. Resolve Odoo database name ─────────────────────────────────
 DB="${ODOO_DB:-odoo-${ODOO_VERSION:-19.0}}"
 
-# ── 3. Wait for PostgreSQL ────────────────────────────────────────
+# ── 3. Ensure critical directories exist ──────────────────────────
+mkdir -p /mnt/extra-addons
+
+# ── 4. Wait for PostgreSQL ────────────────────────────────────────
 echo ">>> Waiting for PostgreSQL at ${PGHOST}:${PGPORT} ..."
 until pg_isready -t 5 > /dev/null 2>&1; do
     sleep 2
 done
 echo ">>> PostgreSQL is ready"
 
-# ── 4. Auto-initialize / install modules ──────────────────────────
+# ── 5. Auto-initialize / install modules (best-effort) ────────────
 EXTRA=$(ls -A /mnt/extra-addons/ 2>/dev/null | paste -sd, -)
 
 DB_READY=$(psql -d "$DB" -tAc \
@@ -30,12 +32,14 @@ ALL_MODULES="base,web"
 
 if [ "$DB_READY" != "1" ]; then
     echo ">>> Initializing database '$DB' with modules: $ALL_MODULES"
-    odoo -i "$ALL_MODULES" --database "$DB" --stop-after-init
+    odoo -i "$ALL_MODULES" --database "$DB" --stop-after-init \
+        || echo ">>> WARNING: DB init failed — check postgres credentials"
 elif [ -n "${DEFAULT_MODULES}${EXTRA}" ]; then
     INSTALL="${DEFAULT_MODULES:+${DEFAULT_MODULES}}${DEFAULT_MODULES:+${EXTRA:+,}}${EXTRA}"
     echo ">>> Installing modules in '$DB': $INSTALL"
-    odoo -i "$INSTALL" --database "$DB" --stop-after-init
+    odoo -i "$INSTALL" --database "$DB" --stop-after-init \
+        || echo ">>> WARNING: Module install failed"
 fi
 
-# ── 5. Execute the requested command ──────────────────────────────
+# ── 6. Execute the requested command ──────────────────────────────
 exec "$@"
