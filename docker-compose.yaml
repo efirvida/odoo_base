@@ -39,8 +39,9 @@ services:
 
   odoo:
     <<: *odoo-common
+    expose:
+      - "8069"
     ports:
-      - "8069:8069"
       - "8071:8071"
       - "8072:8072"
     environment:
