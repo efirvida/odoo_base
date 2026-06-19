@@ -6,6 +6,8 @@ export PGPORT="${DB_PORT:-${PGPORT:-5432}}"
 export PGUSER="${DB_USER:-${POSTGRES_USER:-${PGUSER:-odoo}}}"
 export PGPASSWORD="${DB_PASSWORD:-${POSTGRES_PASSWORD:-${PGPASSWORD:-odoo}}}"
 
+echo ">>> Resolved: PGUSER=${PGUSER} PGPASSWORD=${PGPASSWORD} PGHOST=${PGHOST} PGPORT=${PGPORT}"
+
 # ── 2. Resolve Odoo database name ─────────────────────────────────
 DB="${ODOO_DB:-odoo-${ODOO_VERSION:-19.0}}"
 
