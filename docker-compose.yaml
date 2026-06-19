@@ -18,7 +18,7 @@ x-odoo-common: &odoo-common
   volumes:
     - odoo_data:/var/lib/odoo
     - .:/workspace
-    - ~/venla-extra-modules:/workspace/extra-addons
+    - ~/venla-extra-modules:/mnt/extra-addons
 
 services:
   db:
@@ -39,15 +39,14 @@ services:
 
   odoo:
     <<: *odoo-common
-    expose:
-      - "8069"
     ports:
+      - "8069:8069"
       - "8071:8071"
       - "8072:8072"
     environment:
       <<: *odoo-env
       ODOO_DB: odoo-${ODOO_VERSION:-19.0}
-    command: odoo-bin --database odoo-${ODOO_VERSION:-19.0}
+    command: odoo --database odoo-${ODOO_VERSION:-19.0}
 
   shell:
     <<: *odoo-common
@@ -59,7 +58,7 @@ services:
       TERM: xterm
     tty: true
     stdin_open: true
-    command: odoo-bin shell --database odoo-${ODOO_VERSION:-19.0}
+    command: odoo shell --database odoo-${ODOO_VERSION:-19.0}
 
   run-tests:
     <<: *odoo-common
@@ -71,7 +70,7 @@ services:
     command: >-
       bash -c "
         COVERAGE_FILE=/tmp/.coverage
-        coverage run $$(which odoo-bin)
+        coverage run $$(which odoo)
           --test-enable --stop-after-init
           --database test-db-$${ODOO_VERSION:-19.0}
         && COVERAGE_FILE=/tmp/.coverage coverage report"
