@@ -27,7 +27,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-odoo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
-      POSTGRES_HOST_AUTH_METHOD: trust
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U odoo"]
@@ -36,7 +35,7 @@ services:
       retries: 5
       start_period: 10s
     volumes:
-      - postgres_odoo:/var/lib/postgresql/data
+      - postgres_odoo:/var/lib/postgresql
 
   odoo:
     <<: *odoo-common
