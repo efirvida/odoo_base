@@ -14,6 +14,13 @@ DB="${ODOO_DB:-odoo-${ODOO_VERSION:-19.0}}"
 # ── 3. Ensure critical directories exist ──────────────────────────
 mkdir -p /mnt/extra-addons
 
+# Debug: show extra-addons state
+if [ -d /mnt/extra-addons ] && [ "$(ls -A /mnt/extra-addons 2>/dev/null)" ]; then
+    echo ">>> /mnt/extra-addons OK: $(ls -A /mnt/extra-addons | tr '\n' ' ')"
+else
+    echo ">>> WARNING: /mnt/extra-addons is empty or missing"
+fi
+
 # ── 4. Wait for PostgreSQL ────────────────────────────────────────
 echo ">>> Waiting for PostgreSQL at ${PGHOST}:${PGPORT} ..."
 until pg_isready -t 5 > /dev/null 2>&1; do
