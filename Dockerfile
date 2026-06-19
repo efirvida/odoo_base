@@ -53,13 +53,10 @@ RUN npm install -g rtlcss && npm cache clean --force
 
 # ── 3. Create odoo user ──────────────────────────────────────────
 ARG USER_ID=1000 GROUP_ID=1000
-RUN if getent group ${GROUP_ID} > /dev/null 2>&1; then \
-        existing_group=$(getent group ${GROUP_ID} | cut -d: -f1); \
-        useradd -m -d ${HOME} --uid ${USER_ID} -g "${existing_group}" --shell /bin/bash odoo; \
-    else \
-        groupadd --gid ${GROUP_ID} odoo && \
-        useradd -m -d ${HOME} --uid ${USER_ID} --gid ${GROUP_ID} --shell /bin/bash odoo; \
-    fi
+RUN useradd -m -d ${HOME} --shell /bin/bash odoo && \
+    usermod -u ${USER_ID} odoo 2>/dev/null; \
+    groupmod -g ${GROUP_ID} odoo 2>/dev/null; \
+    true
 
 # ── 4. Install Odoo from source ──────────────────────────────────
 RUN git clone --depth 1 --branch ${ODOO_VERSION} \
