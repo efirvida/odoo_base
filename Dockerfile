@@ -22,10 +22,15 @@ RUN apt-get update && \
         fonts-noto-cjk \
         git \
         gnupg \
+        libffi-dev \
+        libfreetype-dev \
+        libjpeg-dev \
         libldap2-dev \
         libpq-dev \
         libsasl2-dev \
         libssl-dev \
+        libxml2-dev \
+        libxslt1-dev \
         node-less \
         npm \
         postgresql-client \
@@ -63,7 +68,7 @@ RUN ODOO_VER="${ODOO_VERSION:-19.0}" && \
     git clone --depth 1 --branch "${ODOO_VER}" \
         https://github.com/odoo/odoo.git /usr/lib/odoo
 
-RUN pip3 install --break-system-packages --no-cache-dir \
+RUN pip3 install --break-system-packages --no-cache-dir --ignore-installed \
         -r /usr/lib/odoo/requirements.txt
 
 RUN pip3 install --break-system-packages --no-cache-dir -e /usr/lib/odoo && \
