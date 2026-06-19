@@ -15,9 +15,6 @@ x-odoo-common: &odoo-common
     db:
       condition: service_healthy
   restart: unless-stopped
-  env_file:
-    - path: .env
-      required: false
   volumes:
     - odoo_data:/var/lib/odoo
     - .:/workspace
@@ -26,19 +23,18 @@ x-odoo-common: &odoo-common
 services:
   db:
     image: postgres:18
-    env_file:
-      - path: .env
-        required: false
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-odoo}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_HOST_AUTH_METHOD: trust
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "pg_isready"]
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 10s
     volumes:
       - postgres_odoo:/var/lib/postgresql/data
 
