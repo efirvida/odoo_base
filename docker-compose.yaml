@@ -21,6 +21,7 @@ x-odoo-common: &odoo-common
   volumes:
     - odoo_data:/var/lib/odoo
     - .:/workspace
+    - ~/venla-extra-modules:/workspace/extra-addons
 
 services:
   db:

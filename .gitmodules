@@ -1,3 +1,0 @@
-[submodule "extra-addons"]
-	path = extra-addons
-	url = git@dev.augetec.com:venla/odoo-addons.git
