@@ -1,104 +1,31 @@
-FROM ubuntu:noble
+FROM odoo:19.0
 
-SHELL ["/bin/bash", "-xo", "pipefail", "-c"]
+USER root
 
-ENV LANG=C.UTF-8 \
-    DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    HOME=/home/odoo \
-    ODOO_RC=/etc/odoo/odoo.conf \
-    PATH="/home/odoo/.local/bin:${PATH}"
-
-ARG ODOO_VERSION=19.0
-
-# ── 1. System dependencies ───────────────────────────────────────
+# ── Dev tools: system packages ─────────────────────────────────────
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
-        ca-certificates \
-        curl \
-        dirmngr \
-        fonts-noto-cjk \
-        git \
-        gnupg \
-        libffi-dev \
-        libfreetype-dev \
-        libjpeg-dev \
-        libldap2-dev \
-        libpq-dev \
-        libsasl2-dev \
-        libssl-dev \
-        libxml2-dev \
-        libxslt1-dev \
-        node-less \
-        npm \
-        postgresql-client \
-        python3-dev \
-        python3-magic \
-        python3-num2words \
-        python3-odf \
-        python3-pdfminer \
-        python3-pip \
-        python3-phonenumbers \
-        python3-pyldap \
-        python3-qrcode \
-        python3-renderpm \
-        python3-setuptools \
-        python3-slugify \
-        python3-vobject \
-        python3-xlrd \
-        python3-xlwt \
-        python3-watchdog \
-        xz-utils && \
+        git && \
     rm -rf /var/lib/apt/lists/*
 
-# ── 2. Node tools ────────────────────────────────────────────────
-RUN npm install -g rtlcss && npm cache clean --force
-
-# ── 3. Create odoo user ──────────────────────────────────────────
-ARG USER_ID=1000 GROUP_ID=1000
-RUN useradd -m -d ${HOME} --shell /bin/bash odoo && \
-    usermod -u ${USER_ID} odoo 2>/dev/null; \
-    groupmod -g ${GROUP_ID} odoo 2>/dev/null; \
-    true
-
-# ── 4. Install Odoo from source ──────────────────────────────────
-RUN ODOO_VER="${ODOO_VERSION:-19.0}" && \
-    git clone --depth 1 --branch "${ODOO_VER}" \
-        https://github.com/odoo/odoo.git /usr/lib/odoo
-
-RUN pip3 install --break-system-packages --no-cache-dir --ignore-installed \
-        -r /usr/lib/odoo/requirements.txt
-
-RUN pip3 install --break-system-packages --no-cache-dir -e /usr/lib/odoo && \
-    pip3 install --break-system-packages --no-cache-dir --upgrade \
-        lxml lxml_html_clean psycopg2-binary
-
-# ── 5. Dev tools ─────────────────────────────────────────────────
+# ── Dev tools: pip ─────────────────────────────────────────────────
 COPY ./config/requirements.txt /tmp/
-RUN pip3 install --break-system-packages --no-cache-dir --upgrade pip setuptools && \
-    pip3 install --break-system-packages --no-cache-dir \
+RUN pip3 install --break-system-packages --no-cache-dir --ignore-installed \
         ipdb pytest pytest-cov pytest-odoo coverage debugpy ipython ruff && \
-    pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt && \
+    pip3 install --break-system-packages --no-cache-dir --ignore-installed \
+        -r /tmp/requirements.txt && \
     rm /tmp/requirements.txt
 
-# ── 6. Odoo config ───────────────────────────────────────────────
-COPY ./config/odoo.conf /etc/odoo/
-RUN chown odoo:odoo /etc/odoo/odoo.conf && chmod 644 /etc/odoo/odoo.conf
-
-# ── 7. Entrypoint ────────────────────────────────────────────────
+# ── Our configs (override official) ─────────────────────────────────
+COPY ./config/odoo.conf /etc/odoo/odoo.conf
 COPY ./config/entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
-# ── 8. Set up working directories ────────────────────────────────
-RUN mkdir -p /mnt/extra-addons /workspace/extra-addons && \
-    chown -R odoo:odoo /mnt/extra-addons /workspace /var/lib/odoo
-
-VOLUME ["/var/lib/odoo", "/mnt/extra-addons", "/workspace"]
-EXPOSE 8069 8071 8072
-WORKDIR /workspace
+RUN chmod +x /entrypoint.sh && \
+    mkdir -p /workspace/extra-addons && \
+    chown -R odoo:odoo /workspace
 
 USER odoo
+WORKDIR /workspace
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["/bin/bash"]
