@@ -3,8 +3,8 @@
 # ── 1. Export DB env vars in Odoo-native format (PGHOST, etc.) ─────
 export PGHOST="${DB_HOST:-${PGHOST:-db}}"
 export PGPORT="${DB_PORT:-${PGPORT:-5432}}"
-export PGUSER="${DB_USER:-${PGUSER:-odoo}}"
-export PGPASSWORD="${DB_PASSWORD:-${PGPASSWORD:-odoo}}"
+export PGUSER="${DB_USER:-${POSTGRES_USER:-${PGUSER:-odoo}}}"
+export PGPASSWORD="${DB_PASSWORD:-${POSTGRES_PASSWORD:-${PGPASSWORD:-odoo}}}"
 
 # ── 2. Resolve Odoo database name ─────────────────────────────────
 DB="${ODOO_DB:-odoo-${ODOO_VERSION:-19.0}}"

@@ -1,8 +1,10 @@
 x-odoo-env: &odoo-env
   DB_HOST: ${DB_HOST:-db}
   DB_PORT: ${DB_PORT:-5432}
-  POSTGRES_USER: ${POSTGRES_USER:-odoo}
-  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo}
+  POSTGRES_USER: ${DB_USER:-${POSTGRES_USER:-odoo}}
+  POSTGRES_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD:-odoo}}
+  DB_USER: ${DB_USER:-${POSTGRES_USER:-odoo}}
+  DB_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD:-odoo}}
   ODOO_VERSION: ${ODOO_VERSION:-19.0}
   DEFAULT_MODULES: ${DEFAULT_MODULES:-}
 
@@ -24,8 +26,8 @@ services:
   db:
     image: postgres:18
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-odoo}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo}
+      POSTGRES_USER: ${DB_USER:-${POSTGRES_USER:-odoo}}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-${POSTGRES_PASSWORD:-odoo}}
       POSTGRES_DB: ${POSTGRES_DB:-postgres}
     restart: unless-stopped
     healthcheck:
